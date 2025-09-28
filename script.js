@@ -1,5 +1,5 @@
 // GPT Image 1 API Configuration
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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';
 const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
 // Sports Teams Configuration
@@ -74,6 +74,7 @@ const eventDate = document.getElementById('eventDate');
 const eventTime = document.getElementById('eventTime');
 const eventLocation = document.getElementById('eventLocation');
 const designStyle = document.getElementById('designStyle');
+const textStyle = document.getElementById('textStyle');
 const colorScheme = document.getElementById('colorScheme');
 const additionalDetails = document.getElementById('additionalDetails');
 const generateWithParams = document.getElementById('generateWithParams');
@@ -316,6 +317,7 @@ function getParameters() {
         eventTime: eventTime.value,
         eventLocation: eventLocation.value.trim(),
         designStyle: designStyle.value,
+        textStyle: textStyle.value,
         colorScheme: colorScheme.value.trim(),
         additionalDetails: additionalDetails.value.trim()
     };
@@ -326,7 +328,7 @@ function generateTailoredPrompt(params) {
     console.log('Parameters received:', params);
     
     // Build creative and unique poster prompt
-    let prompt = `Design a stunning, eye-catching promotional poster that breaks the mold of typical boring advertisements. Create something truly memorable and unique.
+    let prompt = `Design a stunning, eye-catching promotional poster that breaks the mold of typical boring advertisements. Create something truly memorable and unique while maintaining an elegant, professional, and polished appearance.
 
 CORE INFORMATION TO INCLUDE:
 - Business: "${params.businessName}"
@@ -337,6 +339,28 @@ CORE INFORMATION TO INCLUDE:
 
 CREATIVE DIRECTION:
 ${getDesignStyleDescription(params.designStyle)}
+
+${params.textStyle ? `
+TEXT STYLE REQUIREMENTS:
+${getTextStyleDescription(params.textStyle)}
+
+CRITICAL TEXT IMPLEMENTATION:
+- Apply the specified text style to ALL business information (business name, event name, date, time, location)
+- Ensure the text style is consistently applied throughout the entire poster
+- Make sure the text style enhances the overall design while maintaining perfect readability
+- The text style should complement and work harmoniously with the chosen design style
+- All text must be rendered with the specified typography treatment and visual effects
+` : ''}
+
+${params.designStyle === 'realistic' ? `
+ULTRA-REALISTIC REQUIREMENTS FOR REALISTIC STYLE:
+- Generate photorealistic, ultra-realistic images that look like professional photography
+- The image must be so realistic it could be mistaken for a real photograph
+- Include ALL text as integrated, readable elements within the realistic image
+- Use professional photography quality with dramatic lighting and realistic textures
+- Create depth, shadows, and realistic materials that look authentic
+- The final result must be a single, ultra-realistic image with all text included
+` : ''}
 
 COLOR INSPIRATION: ${params.colorScheme || 'Create a dynamic, energetic color palette that grabs attention'}
 
@@ -349,6 +373,8 @@ DESIGN CHALLENGE:
 - Add personality and character that reflects the business and event theme
 - Include subtle details, textures, or artistic elements that reward closer inspection
 - Make it feel like a work of art, not just an advertisement
+- ALWAYS maintain an elegant, professional, and polished appearance - never scrapy or amateur-looking
+- Even playful designs should have a sophisticated, refined feel
 
 CRITICAL TEXT ACCURACY REQUIREMENTS:
 - Generate ALL text with perfect accuracy - every character, number, and word must be exactly correct
@@ -359,6 +385,9 @@ CRITICAL TEXT ACCURACY REQUIREMENTS:
 - Use high contrast between text and background for maximum readability
 - Ensure no text is cut off, overlapping, or partially obscured
 - Make sure all information is displayed exactly as provided without any modifications
+- CRITICAL: All words must stay on the same line - never split words across lines
+- Ensure proper text wrapping and line breaks to maintain readability
+- Use appropriate font sizing to prevent text overflow or awkward breaks
 
 VISUAL IMPACT:
 - Design something that would stop people in their tracks
@@ -366,16 +395,19 @@ VISUAL IMPACT:
 - Use creative lighting, shadows, or atmospheric effects
 - Consider unique perspectives or artistic techniques
 - Add unexpected visual elements that surprise and delight
+- Maintain a polished, professional appearance throughout
 
 TYPOGRAPHY CREATIVITY:
 - Experiment with creative text treatments beyond basic fonts
 - Use typography as a design element itself
 - Consider artistic text effects, creative sizing, or unique placements
 - Make the text part of the overall artistic composition
+- Ensure all text remains elegant and professional-looking
+- Never use fonts or treatments that look cheap or amateur
 
-The goal is to create a poster that people will remember, photograph, and share - something that stands out in a sea of boring promotional materials. Be bold, be creative, and make it unforgettable!
+The goal is to create a poster that people will remember, photograph, and share - something that stands out in a sea of boring promotional materials while maintaining an elegant, professional, and polished appearance. Be bold, be creative, and make it unforgettable!
 
-FINAL REMINDER: Pay meticulous attention to text accuracy. Every single character in the business name, event name, date, time, and location must be rendered exactly as provided. Text accuracy is absolutely critical - double-check everything before finalizing the design.`;
+FINAL REMINDER: Pay meticulous attention to text accuracy and professional appearance. Every single character in the business name, event name, date, time, and location must be rendered exactly as provided. Text accuracy is absolutely critical - double-check everything before finalizing the design. Ensure all text stays on single lines and maintains a polished, professional appearance.`;
     
     console.log('Final generated prompt:', prompt);
     return prompt;
@@ -409,16 +441,34 @@ function getDesignStyleDescription(style) {
         'bold': 'Create explosive visual energy with dramatic compositions, powerful typography treatments, and dynamic graphic elements. Use bold color contrasts, creative text effects, and energetic layouts that demand attention. Think poster art that would look stunning on a gallery wall.',
         'elegant': 'Design with refined sophistication and artistic grace. Use premium visual elements, sophisticated color harmonies, and elegant typography treatments that feel luxurious and timeless. Create something that feels like high-end design art rather than typical advertising.',
         'playful': 'Infuse joy and creativity with whimsical design elements, unexpected visual surprises, and delightful artistic touches. Use creative character illustrations, fun typography treatments, and playful compositions that bring smiles and create memorable experiences.',
-        'professional': 'Elevate corporate design to an art form with innovative professional aesthetics. Use sophisticated layouts, premium typography treatments, and refined visual elements that maintain professionalism while pushing creative boundaries.'
+        'professional': 'Elevate corporate design to an art form with innovative professional aesthetics. Use sophisticated layouts, premium typography treatments, and refined visual elements that maintain professionalism while pushing creative boundaries.',
+        'realistic': 'CRITICAL: Generate ULTRA-REALISTIC, photorealistic images that look like professional photography or high-end digital art. The image must be so realistic it could be mistaken for a real photograph. Use professional photography quality with dramatic lighting, realistic textures, materials, and depth. Include ALL business text information as realistic, readable text elements within the image - never generate text separately. The text must be integrated into the visual design as part of the realistic image. Think museum-quality artwork that happens to be a business poster - sophisticated, memorable, and visually stunning with perfect text integration. Focus on realistic composition, professional typography treatments, and visual elements that make this poster look like a professional photograph while maintaining perfect business professionalism. The final result must be a single, ultra-realistic image with all text included and perfectly readable. OUTDOOR SETTING REQUIREMENTS: Create an outdoor environment with multiple real-world objects including trees, buildings, street furniture, vehicles, people, and other realistic elements. Use different depths and perspectives - include foreground, middle ground, and background elements to create realistic depth of field. Incorporate modern, contemporary text styles with clean typography that feels current and professional. Use natural lighting conditions and realistic atmospheric effects to enhance the outdoor setting.'
     };
     return styleDescriptions[style] || 'Create a unique, memorable design that stands out from typical promotional materials with artistic flair and creative innovation';
+}
+
+// Helper function to get detailed text style descriptions
+function getTextStyleDescription(textStyle) {
+    const textStyleDescriptions = {
+        'classic': 'Use traditional, timeless typography with serif fonts that convey authority and elegance. Apply classic typography principles with proper spacing, hierarchy, and readability. Think sophisticated newspaper headlines or high-end magazine layouts.',
+        'modern': 'Apply clean, contemporary sans-serif typography with geometric precision. Use modern font families like Helvetica, Arial, or Futura with clean lines and excellent readability. Focus on minimalist typography that feels current and professional.',
+        'script': 'Implement elegant, flowing script typography that adds sophistication and personality. Use cursive or calligraphic fonts that feel refined and artistic. Perfect for elegant events, weddings, or upscale businesses.',
+        'bold': 'Create powerful, attention-grabbing typography with thick, heavy fonts and strong visual impact. Use bold display fonts that command attention and create dramatic visual hierarchy. Perfect for energetic events and bold statements.',
+        'minimal': 'Apply ultra-clean, minimal typography with maximum white space and simple font choices. Focus on typography that is almost invisible in its simplicity yet highly effective. Use thin weights and generous spacing.',
+        'textMasking': 'CRITICAL TEXT MASKING REQUIREMENTS: Create text that appears to be cut out or masked from background images or textures. The text should reveal background content through the letterforms, creating a sophisticated masking effect. Use bold, thick fonts that work well for masking. The background should be visible through the text letters, creating a professional text masking effect. Ensure the text remains highly readable despite the masking technique. This creates a modern, sophisticated look where text becomes a window to the background content.',
+        '3d': 'Generate dramatic 3D text effects with depth, shadows, and dimensional appearance. Create text that appears to pop off the page with realistic 3D modeling, proper lighting, and shadow effects. Use bold fonts that work well with 3D treatment.',
+        'neon': 'Create glowing neon text effects with electric colors and luminous properties. Apply neon tube lighting effects, glowing edges, and vibrant colors that simulate real neon signage. Perfect for night events, clubs, or modern venues.',
+        'handwritten': 'Use authentic handwritten typography that feels personal and approachable. Apply natural, organic letterforms that look genuinely hand-drawn with slight imperfections and character. Great for casual events or personal businesses.',
+        'vintage': 'Implement retro typography styles from specific eras with authentic period-appropriate fonts. Use vintage letterforms, decorative elements, and classic typography treatments that evoke nostalgia and timeless appeal.'
+    };
+    return textStyleDescriptions[textStyle] || '';
 }
 
 // Show loading state
 function showLoading() {
     if (generateWithParams) {
         generateWithParams.disabled = true;
-        generateWithParams.textContent = 'Generating...';
+        generateWithParams.innerHTML = 'Generating...';
     }
     showOverlayLoading();
 }
@@ -428,12 +478,12 @@ function hideLoading() {
     if (generateWithParams) {
         generateWithParams.disabled = false;
         generateWithParams.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                 <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
                 <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            </svg>
-            Generate with Parameters
+                        </svg>
+            Generate
         `;
     }
 }
@@ -467,19 +517,23 @@ function hideImage() {
 
 // Overlay control functions
 function showOverlayLoading() {
-    overlay.style.display = 'flex';
-    overlayLoading.classList.remove('hidden');
-    overlaySuccess.classList.add('hidden');
-    overlayError.classList.add('hidden');
-    
-    // Reset progress
-    updateProgress(0, 'Initializing...');
-    
-    // Simulate progress
-    setTimeout(() => updateProgress(20, 'Generating prompt...'), 500);
-    setTimeout(() => updateProgress(40, 'Sending to AI...'), 1000);
-    setTimeout(() => updateProgress(60, 'Creating image...'), 1500);
-    setTimeout(() => updateProgress(80, 'Processing...'), 2000);
+    if (overlay) {
+        overlay.style.display = 'flex';
+        if (overlayLoading) overlayLoading.classList.remove('hidden');
+        if (overlaySuccess) overlaySuccess.classList.add('hidden');
+        if (overlayError) overlayError.classList.add('hidden');
+        
+        // Reset progress
+        updateProgress(0, 'Initializing...');
+        
+        // Simulate progress over 30 seconds
+        setTimeout(() => updateProgress(10, 'Generating prompt...'), 3000);
+        setTimeout(() => updateProgress(25, 'Sending to AI...'), 7500);
+        setTimeout(() => updateProgress(45, 'Creating image...'), 13500);
+        setTimeout(() => updateProgress(65, 'Processing details...'), 19500);
+        setTimeout(() => updateProgress(80, 'Finalizing...'), 24000);
+        setTimeout(() => updateProgress(95, 'Almost done...'), 27000);
+    }
 }
 
 function updateProgress(percentage, text) {
@@ -492,29 +546,35 @@ function updateProgress(percentage, text) {
 }
 
 function showOverlaySuccess(imageUrl) {
-    overlay.style.display = 'flex';
-    overlayLoading.classList.add('hidden');
-    overlaySuccess.classList.remove('hidden');
-    overlayError.classList.add('hidden');
-    
-    if (overlayImageUrlInput) {
-        overlayImageUrlInput.value = imageUrl;
+    if (overlay) {
+        overlay.style.display = 'flex';
+        if (overlayLoading) overlayLoading.classList.add('hidden');
+        if (overlaySuccess) overlaySuccess.classList.remove('hidden');
+        if (overlayError) overlayError.classList.add('hidden');
+        
+        if (overlayImageUrlInput) {
+            overlayImageUrlInput.value = imageUrl;
+        }
     }
 }
 
 function showOverlayError(message) {
-    overlay.style.display = 'flex';
-    overlayLoading.classList.add('hidden');
-    overlaySuccess.classList.add('hidden');
-    overlayError.classList.remove('hidden');
-    
-    if (overlayErrorText) {
-        overlayErrorText.textContent = message;
+    if (overlay) {
+        overlay.style.display = 'flex';
+        if (overlayLoading) overlayLoading.classList.add('hidden');
+        if (overlaySuccess) overlaySuccess.classList.add('hidden');
+        if (overlayError) overlayError.classList.remove('hidden');
+        
+        if (overlayErrorText) {
+            overlayErrorText.textContent = message;
+        }
     }
 }
 
 function hideOverlay() {
-    overlay.style.display = 'none';
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
 }
 
 function handleCopyUrl() {
