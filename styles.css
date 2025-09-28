@@ -599,6 +599,7 @@ body::before {
     color: #95a5a6;
     font-size: 0.85rem;
     font-style: italic;
+}
 
 /* Overlay styles */
 .overlay {
