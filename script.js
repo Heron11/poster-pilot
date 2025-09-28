@@ -119,8 +119,10 @@ function setupEventListeners() {
         this.style.height = this.scrollHeight + 'px';
     });
     
-    // Load sports schedules on page load
-    loadSportsSchedules();
+    // FIXED: Load sports schedules on page load regardless of button existence
+    if (sportsScheduleContainer) {
+        loadSportsSchedules();
+    }
 }
 
 // Handle image generation
