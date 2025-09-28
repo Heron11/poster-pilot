@@ -1,5 +1,5 @@
 // GPT Image 1 API Configuration
-const OPENAI_API_KEY = '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';
+const OPENAI_API_KEY = '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';
 const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
 // Sports Teams Configuration
@@ -51,6 +51,22 @@ const regenerateBtn = document.getElementById('regenerateBtn');
 const sportsScheduleContainer = document.getElementById('sportsScheduleContainer');
 const refreshScheduleBtn = document.getElementById('refreshSchedule');
 
+// Overlay elements
+const overlay = document.getElementById('overlay');
+const overlayLoading = document.getElementById('overlayLoading');
+const overlaySuccess = document.getElementById('overlaySuccess');
+const overlayError = document.getElementById('overlayError');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const overlayImageUrlInput = document.getElementById('overlayImageUrlInput');
+const overlayCopyUrlBtn = document.getElementById('overlayCopyUrlBtn');
+const overlayDownloadBtn = document.getElementById('overlayDownloadBtn');
+const overlayRegenerateBtn = document.getElementById('overlayRegenerateBtn');
+const overlayCloseBtn = document.getElementById('overlayCloseBtn');
+const overlayRetryBtn = document.getElementById('overlayRetryBtn');
+const overlayCloseErrorBtn = document.getElementById('overlayCloseErrorBtn');
+const overlayErrorText = document.getElementById('overlayErrorText')
+
 // Parameter elements
 const businessName = document.getElementById('businessName');
 const eventName = document.getElementById('eventName');
@@ -73,22 +89,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Setup event listeners
 function setupEventListeners() {
-    // Generate button click
-    generateBtn.addEventListener('click', handleGenerate);
+    // Generate with parameters button
+    if (generateWithParams) {
+        generateWithParams.addEventListener('click', handleGenerateWithParams);
+    }
     
-    // Enter key in textarea (Ctrl+Enter for new line)
-    promptInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.ctrlKey) {
-            e.preventDefault();
-            handleGenerate();
-        }
-    });
+    // Overlay buttons
+    if (overlayDownloadBtn) {
+        overlayDownloadBtn.addEventListener('click', handleDownload);
+    }
     
-    // Download button
-    downloadBtn.addEventListener('click', handleDownload);
+    if (overlayRegenerateBtn) {
+        overlayRegenerateBtn.addEventListener('click', handleRegenerate);
+    }
     
-    // Regenerate button
-    regenerateBtn.addEventListener('click', handleRegenerate);
+    if (overlayCloseBtn) {
+        overlayCloseBtn.addEventListener('click', hideOverlay);
+    }
     
     // Generate with parameters button
     generateWithParams.addEventListener('click', handleGenerateWithParams);
@@ -109,29 +126,33 @@ function setupEventListeners() {
 // Handle image generation
 async function handleGenerate() {
     const prompt = promptInput.value.trim();
-    
-    if (!prompt) {
-        showError('Please enter a description for the image you want to generate.');
-        return;
+  
+    if (overlayRetryBtn) {
+        overlayRetryBtn.addEventListener('click', handleGenerateWithParams);
     }
     
-    currentPrompt = prompt;
-    showLoading();
-    hideError();
-    hideImage();
-    
-    try {
-        const imageUrl = await generateImage(prompt);
-        showImage(imageUrl);
-        currentImageUrl = imageUrl;
-    } catch (error) {
-        console.error('Generation error:', error);
-        showError(error.message || 'Failed to generate image. Please try again.');
+    if (overlayCloseErrorBtn) {
+        overlayCloseErrorBtn.addEventListener('click', hideOverlay);
     }
+    
+    if (overlayCopyUrlBtn) {
+        overlayCopyUrlBtn.addEventListener('click', handleCopyUrl);
+    }
+    
+    // Close overlay when clicking outside
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                hideOverlay();
+            }
+        });
+    }
+
 }
 
+
 // Generate image using GPT Image 1 API
-async function generateImage(prompt) {
+    async function generateImage(prompt) {
     const requestBody = {
         model: 'gpt-image-1',
         prompt: prompt,
@@ -189,6 +210,9 @@ async function generateImage(prompt) {
     }
     
     if (imageUrl) {
+        // Complete progress
+        updateProgress(100, 'Complete!');
+        
         // Download the image immediately
         await downloadImage(imageUrl, prompt);
         return imageUrl;
@@ -237,8 +261,22 @@ function handleDownload() {
 function handleRegenerate() {
     if (!currentPrompt) return;
     
-    promptInput.value = currentPrompt;
-    handleGenerate();
+    showLoading();
+    hideError();
+    hideImage();
+    
+    try {
+        generateImage(currentPrompt).then(imageUrl => {
+            showImage(imageUrl);
+            currentImageUrl = imageUrl;
+        }).catch(error => {
+            console.error('Regeneration error:', error);
+            showError(error.message || 'Failed to regenerate image. Please try again.');
+        });
+    } catch (error) {
+        console.error('Regeneration error:', error);
+        showError(error.message || 'Failed to regenerate image. Please try again.');
+    }
 }
 
 // Handle generation with parameters
@@ -251,7 +289,6 @@ async function handleGenerateWithParams() {
     }
     
     const tailoredPrompt = generateTailoredPrompt(params);
-    promptInput.value = tailoredPrompt;
     
     currentPrompt = tailoredPrompt;
     showLoading();
@@ -311,6 +348,16 @@ DESIGN CHALLENGE:
 - Include subtle details, textures, or artistic elements that reward closer inspection
 - Make it feel like a work of art, not just an advertisement
 
+CRITICAL TEXT ACCURACY REQUIREMENTS:
+- Generate ALL text with perfect accuracy - every character, number, and word must be exactly correct
+- Double-check spelling of business names, event names, dates, times, and locations
+- Ensure dates are in the correct format (MM/DD/YYYY)
+- Ensure times are in the correct 12-hour AM/PM format
+- Verify all text is legible and clearly readable at any size
+- Use high contrast between text and background for maximum readability
+- Ensure no text is cut off, overlapping, or partially obscured
+- Make sure all information is displayed exactly as provided without any modifications
+
 VISUAL IMPACT:
 - Design something that would stop people in their tracks
 - Create visual drama and excitement
@@ -324,7 +371,9 @@ TYPOGRAPHY CREATIVITY:
 - Consider artistic text effects, creative sizing, or unique placements
 - Make the text part of the overall artistic composition
 
-The goal is to create a poster that people will remember, photograph, and share - something that stands out in a sea of boring promotional materials. Be bold, be creative, and make it unforgettable!`;
+The goal is to create a poster that people will remember, photograph, and share - something that stands out in a sea of boring promotional materials. Be bold, be creative, and make it unforgettable!
+
+FINAL REMINDER: Pay meticulous attention to text accuracy. Every single character in the business name, event name, date, time, and location must be rendered exactly as provided. Text accuracy is absolutely critical - double-check everything before finalizing the design.`;
     
     console.log('Final generated prompt:', prompt);
     return prompt;
@@ -365,83 +414,127 @@ function getDesignStyleDescription(style) {
 
 // Show loading state
 function showLoading() {
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Generating...';
-    loadingIndicator.classList.remove('hidden');
+    if (generateWithParams) {
+        generateWithParams.disabled = true;
+        generateWithParams.textContent = 'Generating...';
+    }
+    showOverlayLoading();
 }
 
 // Hide loading state
 function hideLoading() {
-    generateBtn.disabled = false;
-    generateBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        Generate Image
-    `;
-    loadingIndicator.classList.add('hidden');
+    if (generateWithParams) {
+        generateWithParams.disabled = false;
+        generateWithParams.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            </svg>
+            Generate with Parameters
+        `;
+    }
 }
 
 // Show error message
 function showError(message) {
     hideLoading();
-    errorText.textContent = message;
-    errorMessage.classList.remove('hidden');
+    showOverlayError(message);
 }
 
 // Hide error message
 function hideError() {
-    errorMessage.classList.add('hidden');
+    // Error handling is now done through overlay
 }
 
 // Show generated image success message
 function showImage(imageUrl) {
     hideLoading();
     
-    // Create success message instead of showing image
-    imageContainer.innerHTML = `
-        <div class="success-message">
-            <div class="success-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                        </div>
-            <h3>Image Downloaded Successfully!</h3>
-            <p>Your generated image has been downloaded to your device.</p>
-            <div class="image-actions">
-                <button id="downloadBtn" class="action-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    Download Again
-                </button>
-                <button id="regenerateBtn" class="action-btn">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Regenerate
-                </button>
-                    </div>
-                </div>
-            `;
+    // Store the image URL globally for Zapier use
+    window.generatedImageUrl = imageUrl;
     
-    // Re-attach event listeners for the new buttons
-    document.getElementById('downloadBtn').addEventListener('click', handleDownload);
-    document.getElementById('regenerateBtn').addEventListener('click', handleRegenerate);
-    
-    imageContainer.classList.remove('hidden');
+    // Show success overlay
+    showOverlaySuccess(imageUrl);
 }
 
 // Hide generated image
 function hideImage() {
-    imageContainer.classList.add('hidden');
+    // Image display is now handled through overlay
+}
+
+// Overlay control functions
+function showOverlayLoading() {
+    overlay.style.display = 'flex';
+    overlayLoading.classList.remove('hidden');
+    overlaySuccess.classList.add('hidden');
+    overlayError.classList.add('hidden');
+    
+    // Reset progress
+    updateProgress(0, 'Initializing...');
+    
+    // Simulate progress
+    setTimeout(() => updateProgress(20, 'Generating prompt...'), 500);
+    setTimeout(() => updateProgress(40, 'Sending to AI...'), 1000);
+    setTimeout(() => updateProgress(60, 'Creating image...'), 1500);
+    setTimeout(() => updateProgress(80, 'Processing...'), 2000);
+}
+
+function updateProgress(percentage, text) {
+    if (progressBar) {
+        progressBar.style.width = percentage + '%';
+    }
+    if (progressText) {
+        progressText.textContent = text;
+    }
+}
+
+function showOverlaySuccess(imageUrl) {
+    overlay.style.display = 'flex';
+    overlayLoading.classList.add('hidden');
+    overlaySuccess.classList.remove('hidden');
+    overlayError.classList.add('hidden');
+    
+    if (overlayImageUrlInput) {
+        overlayImageUrlInput.value = imageUrl;
+    }
+}
+
+function showOverlayError(message) {
+    overlay.style.display = 'flex';
+    overlayLoading.classList.add('hidden');
+    overlaySuccess.classList.add('hidden');
+    overlayError.classList.remove('hidden');
+    
+    if (overlayErrorText) {
+        overlayErrorText.textContent = message;
+    }
+}
+
+function hideOverlay() {
+    overlay.style.display = 'none';
+}
+
+function handleCopyUrl() {
+    if (overlayImageUrlInput) {
+        overlayImageUrlInput.select();
+        overlayImageUrlInput.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        // Show feedback
+        const originalText = overlayCopyUrlBtn.innerHTML;
+        overlayCopyUrlBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Copied!
+        `;
+        
+        setTimeout(() => {
+            overlayCopyUrlBtn.innerHTML = originalText;
+        }, 2000);
+    }
 }
 
 // Load sports schedules from ESPN API - REAL DATA ONLY

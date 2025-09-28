@@ -3,75 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Generator</title>
+    <title>Poster Pilot</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>AI Image Generator</h1>
-            <p>Powered by GPT Image 1</p>
+            <div class="header-content">
+                <img src="combined.png" alt="Poster Pilot" class="header-logo">
+            </div>
         </header>
         
         <div class="content-wrapper">
-            <main class="main-content">
-                <div class="input-section">
-                    <div class="input-container">
-                        <textarea 
-                            id="promptInput" 
-                            placeholder="Describe the image you want to generate..."
-                            rows="3"
-                        ></textarea>
-                        <button id="generateBtn" class="generate-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            </svg>
-                            Generate Image
-                        </button>
-                    </div>
-                </div>
-            
-                <div class="results-section">
-                    <div id="loadingIndicator" class="loading hidden">
-                        <div class="spinner"></div>
-                        <p>Generating your image...</p>
-                    </div>
-                    
-                    <div id="errorMessage" class="error hidden">
-                        <p id="errorText"></p>
-                    </div>
-                    
-                    <div id="imageContainer" class="image-container hidden">
-                        <img id="generatedImage" alt="Generated image">
-                        <div class="image-actions">
-                            <button id="downloadBtn" class="action-btn">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                Download
-                            </button>
-                            <button id="regenerateBtn" class="action-btn">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Regenerate
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </main>
-            
-            <aside class="parameters-panel">
-                <div class="parameters-header">
-                    <h3>Parameters</h3>
-                    <p>Customize your image generation</p>
-                </div>
+            <div class="parameters-panel">
                 
                 <!-- Add Sports Schedule Section -->
                 <div class="sports-schedule-section">
@@ -93,12 +37,12 @@
                 <div class="parameters-content">
                     <div class="parameter-group">
                         <label for="businessName">Business Name</label>
-                        <input type="text" id="businessName" placeholder="e.g., Maxi's Pizza Bar">
+                        <input type="text" id="businessName" placeholder="Business name">
                     </div>
                     
                     <div class="parameter-group">
                         <label for="eventName">Event Name</label>
-                        <input type="text" id="eventName" placeholder="e.g., Philadelphia Eagles Game Watch Party">
+                        <input type="text" id="eventName" placeholder="Event name">
                     </div>
                     
                     <div class="parameter-group">
@@ -113,7 +57,7 @@
                     
                     <div class="parameter-group">
                         <label for="eventLocation">Event Location</label>
-                        <input type="text" id="eventLocation" placeholder="e.g., 123 Main Street, Philadelphia, PA">
+                        <input type="text" id="eventLocation" placeholder="Event location">
                     </div>
                     
                     <div class="parameter-group">
@@ -132,24 +76,127 @@
                     
                     <div class="parameter-group">
                         <label for="colorScheme">Color Scheme</label>
-                        <input type="text" id="colorScheme" placeholder="e.g., reds, greens, golds">
+                        <input type="text" id="colorScheme" placeholder="Color scheme">
                     </div>
                     
                     <div class="parameter-group">
                         <label for="additionalDetails">Additional Details</label>
-                        <textarea id="additionalDetails" placeholder="Any specific elements, themes, or requirements..." rows="3"></textarea>
+                        <input type="text" id="additionalDetails" placeholder="Details...">
                     </div>
-                    
-                    <button id="generateWithParams" class="generate-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </div>
+            </div>
+            
+            <button id="generateWithParams" class="generate-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                </svg>
+                Generate with Parameters
+            </button>
+            
+        </div>
+    </div>
+    
+    <!-- Overlay for loading and results -->
+    <div id="overlay" class="overlay">
+        <div class="overlay-content">
+            <div id="overlayLoading" class="overlay-loading">
+                <div class="overlay-header">
+                    <h3>Generating Your Poster</h3>
+                    <p>Creating your custom poster with AI...</p>
+                </div>
+                <div class="overlay-spinner"></div>
+                <div class="overlay-progress">
+                    <div id="progressBar" class="overlay-progress-bar"></div>
+                </div>
+                <p id="progressText">Initializing...</p>
+            </div>
+            
+            <div id="overlaySuccess" class="overlay-success hidden">
+                <div class="overlay-header">
+                    <div class="success-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
                         </svg>
-                        Generate with Parameters
+                    </div>
+                    <h3>Poster Generated Successfully!</h3>
+                    <p>Your image is ready for Zapier integration.</p>
+                </div>
+                
+                <div class="image-url-container">
+                    <label for="overlayImageUrlInput">Image URL for Zapier:</label>
+                    <div class="url-input-group">
+                        <input type="text" id="overlayImageUrlInput" readonly class="url-input">
+                        <button id="overlayCopyUrlBtn" class="copy-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            Copy URL
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="overlay-actions">
+                    <button id="overlayDownloadBtn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Download Image
+                    </button>
+                    <button id="overlayRegenerateBtn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Regenerate
+                    </button>
+                    <button id="overlayCloseBtn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Close
                     </button>
                 </div>
-            </aside>
+            </div>
+            
+            <div id="overlayError" class="overlay-error hidden">
+                <div class="overlay-header">
+                    <div class="error-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                            <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
+                            <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <h3>Generation Failed</h3>
+                    <p id="overlayErrorText">Something went wrong while generating your poster.</p>
+                </div>
+                
+                <div class="overlay-actions">
+                    <button id="overlayRetryBtn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Try Again
+                    </button>
+                    <button id="overlayCloseErrorBtn" class="action-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Close
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     
