@@ -1,483 +1,412 @@
+// GPT Image 1 API Configuration
+const OPENAI_API_KEY = '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';
+const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
+
+// DOM Elements
+const promptInput = document.getElementById('promptInput');
+const generateBtn = document.getElementById('generateBtn');
+const loadingIndicator = document.getElementById('loadingIndicator');
+const errorMessage = document.getElementById('errorMessage');
+const errorText = document.getElementById('errorText');
+const imageContainer = document.getElementById('imageContainer');
+const generatedImage = document.getElementById('generatedImage');
+const downloadBtn = document.getElementById('downloadBtn');
+const regenerateBtn = document.getElementById('regenerateBtn');
+
+// Parameter elements
+const businessName = document.getElementById('businessName');
+const eventName = document.getElementById('eventName');
+const eventDate = document.getElementById('eventDate');
+const eventTime = document.getElementById('eventTime');
+const eventLocation = document.getElementById('eventLocation');
+const designStyle = document.getElementById('designStyle');
+const colorScheme = document.getElementById('colorScheme');
+const additionalDetails = document.getElementById('additionalDetails');
+const generateWithParams = document.getElementById('generateWithParams');
+
+// State
+let currentImageUrl = null;
+let currentPrompt = '';
+
+// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
-    const chatMessages = document.getElementById('chatMessages');
-    const newChatBtn = document.getElementById('newChatBtn');
-    const conversationsContainer = document.querySelector('.conversations-container');
+    setupEventListeners();
+});
+
+// Setup event listeners
+function setupEventListeners() {
+    // Generate button click
+    generateBtn.addEventListener('click', handleGenerate);
     
-    let currentConversationId = 1;
-    let conversations = {
-        1: []
-    };
-
-    // OpenAI API configuration
-    const OPENAI_API_KEY = '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';
-    const OPENAI_API_URL = 'https://api.openai.com/v1/images/generations';
-
-    // Keywords that indicate image generation requests
-    const IMAGE_KEYWORDS = [
-        'generate image', 'create image', 'draw', 'picture of', 'image of', 
-        'show me', 'make an image', 'illustrate', 'visualize', 'paint',
-        'sketch', 'design', 'render', 'depict', 'portray'
-    ];
+    // Enter key in textarea (Ctrl+Enter for new line)
+    promptInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.ctrlKey) {
+            e.preventDefault();
+            handleGenerate();
+        }
+    });
+    
+    // Download button
+    downloadBtn.addEventListener('click', handleDownload);
+    
+    // Regenerate button
+    regenerateBtn.addEventListener('click', handleRegenerate);
+    
+    // Generate with parameters button
+    generateWithParams.addEventListener('click', handleGenerateWithParams);
 
     // Auto-resize textarea
-    function autoResize(textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-    }
+    promptInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+}
 
-    // Update send button state
-    function updateSendButton() {
-        const hasContent = messageInput.value.trim().length > 0;
-        sendButton.disabled = !hasContent;
+// Handle image generation
+async function handleGenerate() {
+    const prompt = promptInput.value.trim();
+    
+    if (!prompt) {
+        showError('Please enter a description for the image you want to generate.');
+        return;
     }
-
-    // Function to create message avatar
-    function createMessageAvatar(isUser) {
-        const avatar = document.createElement('div');
-        avatar.className = 'message-avatar';
-        
-        if (isUser) {
-            avatar.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-            `;
-        } else {
-            avatar.innerHTML = `
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-            `;
-        }
-        
-        return avatar;
+    
+    currentPrompt = prompt;
+    showLoading();
+    hideError();
+    hideImage();
+    
+    try {
+        const imageUrl = await generateImage(prompt);
+        showImage(imageUrl);
+        currentImageUrl = imageUrl;
+    } catch (error) {
+        console.error('Generation error:', error);
+        showError(error.message || 'Failed to generate image. Please try again.');
     }
+}
 
-    // Function to detect if message is requesting image generation
-    function isImageRequest(message) {
-        const lowerMessage = message.toLowerCase();
-        
-        // Check for image generation keywords (more flexible)
-        const imageKeywords = [
-            'generate image',
-            'create image', 
-            'draw',
-            'picture of',
-            'image of',
-            'show me',
-            'make image',
-            'illustrate',
-            'visualize',
-            'paint',
-            'sketch',
-            'design',
-            'render'
-        ];
-        
-        // Check if any keyword appears in the message
-        const hasImageKeyword = imageKeywords.some(keyword => lowerMessage.includes(keyword));
-        
-        // Additional check for specific patterns
-        const specificPatterns = [
-            /generate\s+image/i,
-            /create\s+image/i,
-            /draw\s+/i,
-            /picture\s+of/i,
-            /image\s+of/i
-        ];
-        
-        const hasSpecificPattern = specificPatterns.some(pattern => pattern.test(message));
-        
-        return hasImageKeyword || hasSpecificPattern;
-    }
-
-    // Function to extract image prompt from user message
-    function extractImagePrompt(message) {
-        let prompt = message;
-        
-        // Remove image generation prefixes using regex patterns
-        const patterns = [
-            /generate\s+(an\s+)?image\s+(of\s+)?/i,
-            /create\s+(an\s+)?image\s+(of\s+)?/i,
-            /draw\s+(a\s+|an\s+)?/i,
-            /picture\s+of\s+/i,
-            /image\s+of\s+/i,
-            /show\s+me\s+(a\s+|an\s+)?/i,
-            /make\s+(an\s+)?image\s+(of\s+)?/i,
-            /illustrate\s+/i,
-            /visualize\s+/i,
-            /paint\s+(a\s+|an\s+)?/i,
-            /sketch\s+(a\s+|an\s+)?/i,
-            /design\s+(a\s+|an\s+)?/i,
-            /render\s+(a\s+|an\s+)?/i,
-            /depict\s+/i,
-            /portray\s+/i
-        ];
-        
-        for (const pattern of patterns) {
-            prompt = prompt.replace(pattern, '');
-        }
-        
-        return prompt.trim();
-    }
-
-    // Function to generate image using GPT Image 1
-    async function generateImage(prompt) {
-        try {
-            console.log('Generating image with prompt:', prompt);
-            
-            const response = await fetch(OPENAI_API_URL, {
+// Generate image using GPT Image 1 API
+async function generateImage(prompt) {
+    const requestBody = {
+        model: 'gpt-image-1',
+        prompt: prompt,
+        n: 1
+    };
+    
+    console.log('Sending request to GPT Image 1 API:', requestBody);
+    
+    const response = await fetch(API_ENDPOINT, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'gpt-image-1',
-                    prompt: prompt,
-                    size: '1024x1024',
-                    n: 1
-                })
-            });
-
-            console.log('API response status:', response.status);
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify(requestBody)
+    });
             
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API error response:', errorText);
-                throw new Error(`API request failed: ${response.status} - ${errorText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`API request failed: ${response.status} - ${errorData.error?.message || response.statusText}`);
             }
 
             const data = await response.json();
-            console.log('API response data:', data);
-            console.log('Response structure:', JSON.stringify(data, null, 2));
-            
-            // Try different possible response structures
-            let imageData = null;
-            
-            // GPT Image 1 format: data[0].b64_json (base64 encoded image)
-            if (data.data && data.data[0] && data.data[0].b64_json) {
-                imageData = data.data[0].b64_json;
-                console.log('Found base64 image data in GPT Image 1 format');
-                // Convert base64 to data URL
-                return `data:image/png;base64,${imageData}`;
-            }
-            // Standard DALL-E format: data.data[0].url
-            else if (data.data && data.data[0] && data.data[0].url) {
-                imageData = data.data[0].url;
-                console.log('Found image URL in standard format:', imageData);
-                return imageData;
-            }
-            // Alternative format: data.images[0].url
-            else if (data.images && data.images[0] && data.images[0].url) {
-                imageData = data.images[0].url;
-                console.log('Found image URL in images format:', imageData);
-                return imageData;
-            }
-            // Direct format: data.url
+    console.log('GPT Image 1 API response:', data);
+    
+    // Debug: Log the data array structure
+    console.log('Data array:', data.data);
+    if (data.data && data.data[0]) {
+        console.log('First data item:', data.data[0]);
+        console.log('First data item keys:', Object.keys(data.data[0]));
+    }
+    
+    // Parse the response - try multiple possible structures
+    let imageUrl = null;
+    
+    // Try GPT Image 1 format: data[0].url
+    if (data.data && data.data[0] && data.data[0].url) {
+        imageUrl = data.data[0].url;
+        console.log('Found image URL in GPT Image 1 format:', imageUrl);
+    }
+    // Try alternative format: data[0].image_url
+    else if (data.data && data.data[0] && data.data[0].image_url) {
+        imageUrl = data.data[0].image_url;
+        console.log('Found image URL in alternative format:', imageUrl);
+    }
+    // Try base64 format: data[0].b64_json
+    else if (data.data && data.data[0] && data.data[0].b64_json) {
+        imageUrl = `data:image/png;base64,${data.data[0].b64_json}`;
+        console.log('Found base64 image data');
+    }
+    // Try direct format: data.url
             else if (data.url) {
-                imageData = data.url;
-                console.log('Found image URL in direct format:', imageData);
-                return imageData;
-            }
-            // Array format: data[0].url
-            else if (Array.isArray(data) && data[0] && data[0].url) {
-                imageData = data[0].url;
-                console.log('Found image URL in array format:', imageData);
-                return imageData;
-            }
-            else {
-                console.error('Could not find image data in any expected format. Full response:', data);
-                throw new Error(`Unexpected API response structure. Available keys: ${Object.keys(data).join(', ')}`);
-            }
-        } catch (error) {
-            console.error('Error generating image:', error);
-            throw error;
-        }
+        imageUrl = data.url;
+        console.log('Found image URL in direct format:', imageUrl);
     }
-
-    // Function to add a message to the chat
-    function addMessage(content, isUser = false, imageUrl = null) {
-        const messageGroup = document.createElement('div');
-        messageGroup.className = 'message-group';
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
-        
-        const avatar = createMessageAvatar(isUser);
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-        
-        if (imageUrl) {
-            console.log('Adding image to message:', imageUrl);
-            // Add image to message
-            const imageElement = document.createElement('img');
-            imageElement.src = imageUrl;
-            imageElement.alt = 'Generated image';
-            imageElement.className = 'generated-image';
-            imageElement.loading = 'lazy';
-            
-            // Add error handling for image loading
-            imageElement.onerror = function() {
-                console.error('Failed to load image:', imageUrl);
-                this.style.display = 'none';
-                const errorDiv = document.createElement('div');
-                errorDiv.textContent = 'Failed to load image';
-                errorDiv.style.color = '#ff6b6b';
-                messageContent.appendChild(errorDiv);
-            };
-            
-            imageElement.onload = function() {
-                console.log('Image loaded successfully:', imageUrl);
-            };
-            
-            messageContent.appendChild(imageElement);
-            
-            if (content) {
-                const textContent = document.createElement('div');
-                textContent.textContent = content;
-                messageContent.appendChild(textContent);
-            }
-        } else {
-            console.log('No image URL provided, showing text only:', content);
-            messageContent.textContent = content;
-        }
-        
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(messageContent);
-        messageGroup.appendChild(messageDiv);
-        chatMessages.appendChild(messageGroup);
-        
-        // Store message in current conversation
-        conversations[currentConversationId].push({
-            content: content,
-            isUser: isUser,
-            imageUrl: imageUrl,
-            timestamp: new Date()
-        });
-        
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    if (imageUrl) {
+        // Download the image immediately
+        await downloadImage(imageUrl, prompt);
+        return imageUrl;
+    } else {
+        console.error('Could not find image URL in any format. Full response:', data);
+        throw new Error('Could not find image URL in API response. Please try again.');
     }
+}
 
-    // Function to send a message
-    async function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message === '' || sendButton.disabled) return;
-
-        // Add user message
-        addMessage(message, true);
-        messageInput.value = '';
-        autoResize(messageInput);
-        updateSendButton();
-
-        // Check if this is an image generation request
-        console.log('User message:', message);
-        console.log('Is image request:', isImageRequest(message));
+// Download image function
+async function downloadImage(imageUrl, prompt) {
+    try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
         
-        if (isImageRequest(message)) {
-            const imagePrompt = extractImagePrompt(message);
-            console.log('Extracted prompt:', imagePrompt);
-            
-            // Show image generation indicator
-            const imageIndicator = document.createElement('div');
-            imageIndicator.className = 'message-group';
-            imageIndicator.innerHTML = `
-                <div class="message assistant-message">
-                    ${createMessageAvatar(false).outerHTML}
-                    <div class="message-content">
-                        <div class="image-generation-indicator">
-                            <div class="spinner"></div>
-                            <span>Generating image...</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chatMessages.appendChild(imageIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `generated-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the object URL
+        URL.revokeObjectURL(link.href);
+        
+        console.log('Image downloaded successfully');
+    } catch (error) {
+        console.error('Error downloading image:', error);
+        throw new Error('Failed to download image');
+    }
+}
 
-            try {
-                // Generate image
-                const imageUrl = await generateImage(imagePrompt);
-                
-                // Remove indicator and add image
-                chatMessages.removeChild(imageIndicator);
-                addMessage(`Here's your generated image:`, false, imageUrl);
-                
+// Handle download
+function handleDownload() {
+    if (!currentImageUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = currentImageUrl;
+    link.download = `generated-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Handle regenerate
+function handleRegenerate() {
+    if (!currentPrompt) return;
+    
+    promptInput.value = currentPrompt;
+    handleGenerate();
+}
+
+// Handle generation with parameters
+async function handleGenerateWithParams() {
+    const params = getParameters();
+    
+    if (!params.businessName) {
+        showError('Please enter a business name.');
+        return;
+    }
+    
+    const tailoredPrompt = generateTailoredPrompt(params);
+    promptInput.value = tailoredPrompt;
+    
+    currentPrompt = tailoredPrompt;
+    showLoading();
+    hideError();
+    hideImage();
+    
+    try {
+        const imageUrl = await generateImage(tailoredPrompt);
+        showImage(imageUrl);
+        currentImageUrl = imageUrl;
             } catch (error) {
-                // Remove indicator and show error
-                chatMessages.removeChild(imageIndicator);
-                addMessage(`Sorry, I couldn't generate the image. Error: ${error.message}`, false);
-            }
-        } else {
-            // Regular text conversation
-            const typingIndicator = document.createElement('div');
-            typingIndicator.className = 'message-group';
-            typingIndicator.innerHTML = `
-                <div class="message assistant-message">
-                    ${createMessageAvatar(false).outerHTML}
-                    <div class="message-content">
-                        <div class="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            chatMessages.appendChild(typingIndicator);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Simulate assistant response
-            setTimeout(() => {
-                // Remove typing indicator
-                chatMessages.removeChild(typingIndicator);
-                
-                const responses = [
-                    "I understand what you're saying. Let me help you with that.",
-                    "That's an interesting question. Here's what I think...",
-                    "I see. Could you provide more details about that?",
-                    "Thanks for sharing that with me. Let me respond accordingly.",
-                    "I appreciate your message. Here's my response.",
-                    "That's a good point. Let me elaborate on that.",
-                    "I'm here to help. What would you like to know more about?",
-                    "Interesting perspective. Let me share my thoughts on this.",
-                    "Great question! Let me break that down for you.",
-                    "I can definitely help with that. Here's my take on it.",
-                    "Try asking me to 'generate an image of a cat' or 'draw a sunset' to see image generation in action!"
-                ];
-                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-                addMessage(randomResponse, false);
-            }, 1500 + Math.random() * 1000);
-        }
+        console.error('Generation error:', error);
+        showError(error.message || 'Failed to generate image. Please try again.');
     }
+}
 
-    // Function to create new conversation
-    function createNewConversation() {
-        const conversationId = Date.now();
-        conversations[conversationId] = [];
-        currentConversationId = conversationId;
-        
-        // Clear chat messages
-        chatMessages.innerHTML = `
-            <div class="message-group">
-                <div class="message assistant-message">
-                    <div class="message-avatar">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </div>
-                    <div class="message-content">
-                        Hello! How can I help you today?
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Update conversation list
-        updateConversationList();
-    }
+// Get parameters from form
+function getParameters() {
+    return {
+        businessName: businessName.value.trim(),
+        eventName: eventName.value.trim(),
+        eventDate: eventDate.value,
+        eventTime: eventTime.value,
+        eventLocation: eventLocation.value.trim(),
+        designStyle: designStyle.value,
+        colorScheme: colorScheme.value.trim(),
+        additionalDetails: additionalDetails.value.trim()
+    };
+}
 
-    // Function to update conversation list
-    function updateConversationList() {
-        conversationsContainer.innerHTML = '';
-        
-        Object.keys(conversations).forEach(id => {
-            const conversationItem = document.createElement('div');
-            conversationItem.className = `conversation-item ${id == currentConversationId ? 'active' : ''}`;
-            conversationItem.dataset.conversation = id;
-            
-            const messages = conversations[id];
-            const title = messages.length > 0 ? 
-                (messages.find(m => m.isUser)?.content.substring(0, 30) + '...' || 'New conversation') : 
-                'New conversation';
-            
-            conversationItem.innerHTML = `
-                <div class="conversation-title">${title}</div>
-            `;
-            
-            conversationItem.addEventListener('click', () => {
-                switchConversation(id);
-            });
-            
-            conversationsContainer.appendChild(conversationItem);
-        });
-    }
+// Generate tailored prompt from parameters
+function generateTailoredPrompt(params) {
+    console.log('Parameters received:', params);
+    
+    // Build creative and unique poster prompt
+    let prompt = `Design a stunning, eye-catching promotional poster that breaks the mold of typical boring advertisements. Create something truly memorable and unique.
 
-    // Function to switch conversation
-    function switchConversation(conversationId) {
-        currentConversationId = conversationId;
-        
-        // Clear chat messages
-        chatMessages.innerHTML = '';
-        
-        // Load conversation messages
-        const messages = conversations[conversationId];
-        if (messages.length === 0) {
-            chatMessages.innerHTML = `
-                <div class="message-group">
-                    <div class="message assistant-message">
-                        <div class="message-avatar">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+CORE INFORMATION TO INCLUDE:
+- Business: "${params.businessName}"
+- Event: "${params.eventName || 'Special Event'}"
+- Date: ${formatDate(params.eventDate) || 'TBA'}
+- Time: ${formatTime(params.eventTime) || 'TBA'}
+- Location: "${params.eventLocation || 'Contact for details'}"
+
+CREATIVE DIRECTION:
+${getDesignStyleDescription(params.designStyle)}
+
+COLOR INSPIRATION: ${params.colorScheme || 'Create a dynamic, energetic color palette that grabs attention'}
+
+SPECIAL ELEMENTS: ${params.additionalDetails || 'Add creative visual elements that make this poster stand out from the crowd'}
+
+DESIGN CHALLENGE:
+- Think outside the box - avoid cliché layouts and typical poster designs
+- Create visual interest through unexpected compositions, creative typography, and unique graphic elements
+- Use dynamic angles, creative text placement, or innovative visual metaphors
+- Add personality and character that reflects the business and event theme
+- Include subtle details, textures, or artistic elements that reward closer inspection
+- Make it feel like a work of art, not just an advertisement
+
+VISUAL IMPACT:
+- Design something that would stop people in their tracks
+- Create visual drama and excitement
+- Use creative lighting, shadows, or atmospheric effects
+- Consider unique perspectives or artistic techniques
+- Add unexpected visual elements that surprise and delight
+
+TYPOGRAPHY CREATIVITY:
+- Experiment with creative text treatments beyond basic fonts
+- Use typography as a design element itself
+- Consider artistic text effects, creative sizing, or unique placements
+- Make the text part of the overall artistic composition
+
+The goal is to create a poster that people will remember, photograph, and share - something that stands out in a sea of boring promotional materials. Be bold, be creative, and make it unforgettable!`;
+    
+    console.log('Final generated prompt:', prompt);
+    return prompt;
+}
+
+// Helper function to format date
+function formatDate(dateString) {
+    if (!dateString) return null;
+    const dateParts = dateString.split('-');
+    return `${dateParts[1]}/${dateParts[2]}/${dateParts[0]}`;
+}
+
+// Helper function to format time
+function formatTime(timeString) {
+    if (!timeString) return null;
+    const timeParts = timeString.split(':');
+    let hours = parseInt(timeParts[0]);
+    const minutes = timeParts[1];
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${hours}:${minutes} ${ampm}`;
+}
+
+// Helper function to get detailed design style descriptions
+function getDesignStyleDescription(style) {
+    const styleDescriptions = {
+        'modern': 'Push the boundaries of contemporary design with unexpected geometric compositions, innovative typography treatments, and cutting-edge visual elements. Experiment with asymmetrical layouts, creative use of negative space, and modern artistic techniques that feel fresh and avant-garde.',
+        'vintage': 'Channel authentic retro aesthetics with creative reinterpretations of classic design eras. Think artistic vintage posters, hand-drawn elements, weathered textures, and nostalgic color palettes that tell a story. Add artistic flair and period-appropriate details that feel authentic yet surprising.',
+        'minimalist': 'Master the art of "less is more" with sophisticated minimalism that uses every element purposefully. Create visual impact through strategic use of space, innovative typography choices, and subtle details that reveal themselves upon closer inspection. Make simplicity feel luxurious and intentional.',
+        'bold': 'Create explosive visual energy with dramatic compositions, powerful typography treatments, and dynamic graphic elements. Use bold color contrasts, creative text effects, and energetic layouts that demand attention. Think poster art that would look stunning on a gallery wall.',
+        'elegant': 'Design with refined sophistication and artistic grace. Use premium visual elements, sophisticated color harmonies, and elegant typography treatments that feel luxurious and timeless. Create something that feels like high-end design art rather than typical advertising.',
+        'playful': 'Infuse joy and creativity with whimsical design elements, unexpected visual surprises, and delightful artistic touches. Use creative character illustrations, fun typography treatments, and playful compositions that bring smiles and create memorable experiences.',
+        'professional': 'Elevate corporate design to an art form with innovative professional aesthetics. Use sophisticated layouts, premium typography treatments, and refined visual elements that maintain professionalism while pushing creative boundaries.'
+    };
+    return styleDescriptions[style] || 'Create a unique, memorable design that stands out from typical promotional materials with artistic flair and creative innovation';
+}
+
+// Show loading state
+function showLoading() {
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+    loadingIndicator.classList.remove('hidden');
+}
+
+// Hide loading state
+function hideLoading() {
+    generateBtn.disabled = false;
+    generateBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        Generate Image
+    `;
+    loadingIndicator.classList.add('hidden');
+}
+
+// Show error message
+function showError(message) {
+    hideLoading();
+    errorText.textContent = message;
+    errorMessage.classList.remove('hidden');
+}
+
+// Hide error message
+function hideError() {
+    errorMessage.classList.add('hidden');
+}
+
+// Show generated image success message
+function showImage(imageUrl) {
+    hideLoading();
+    
+    // Create success message instead of showing image
+    imageContainer.innerHTML = `
+        <div class="success-message">
+            <div class="success-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
                             </svg>
                         </div>
-                        <div class="message-content">
-                            Hello! How can I help you today?
-                        </div>
+            <h3>Image Downloaded Successfully!</h3>
+            <p>Your generated image has been downloaded to your device.</p>
+            <div class="image-actions">
+                <button id="downloadBtn" class="action-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15V19A2 2 0 0 1 19 21H5A2 2 0 0 1 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Download Again
+                </button>
+                <button id="regenerateBtn" class="action-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Regenerate
+                </button>
                     </div>
                 </div>
             `;
-        } else {
-            messages.forEach(msg => {
-                addMessage(msg.content, msg.isUser, msg.imageUrl);
-            });
-        }
-        
-        updateConversationList();
+    
+    // Re-attach event listeners for the new buttons
+    document.getElementById('downloadBtn').addEventListener('click', handleDownload);
+    document.getElementById('regenerateBtn').addEventListener('click', handleRegenerate);
+    
+    imageContainer.classList.remove('hidden');
+}
+
+// Hide generated image
+function hideImage() {
+    imageContainer.classList.add('hidden');
+}
+
+// Utility function to format error messages
+function formatErrorMessage(error) {
+    if (error.includes('API request failed')) {
+        return 'There was an issue with the image generation service. Please try again.';
+    } else if (error.includes('Unexpected API response')) {
+        return 'The service returned an unexpected response. Please try again.';
+    } else {
+        return error;
     }
-
-    // Event listeners
-    sendButton.addEventListener('click', sendMessage);
-    
-    messageInput.addEventListener('input', function() {
-        autoResize(this);
-        updateSendButton();
-    });
-    
-    messageInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    
-    newChatBtn.addEventListener('click', createNewConversation);
-
-    // Test function for image generation (can be called from console)
-    window.testImageGeneration = async function(prompt = "a cute cat") {
-        console.log('Testing image generation with prompt:', prompt);
-        try {
-            const imageUrl = await generateImage(prompt);
-            console.log('Generated image URL:', imageUrl);
-            addMessage(`Test image generated:`, false, imageUrl);
-            return imageUrl;
-        } catch (error) {
-            console.error('Test image generation failed:', error);
-            addMessage(`Test failed: ${error.message}`, false);
-            return null;
-        }
-    };
-
-    // Initialize
-    updateConversationList();
-    messageInput.focus();
-    
-    console.log('Chat interface loaded. You can test image generation by typing:');
-    console.log('- "generate an image of a cat"');
-    console.log('- "draw a sunset"'); 
-    console.log('- "create image of a robot"');
-    console.log('Or test directly with: testImageGeneration("a cute cat")');
-});
+}
