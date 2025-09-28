@@ -1,5 +1,5 @@
 // GPT Image 1 API Configuration
-const OPENAI_API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your actual API key
+const OPENAI_API_KEY = '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';
 const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
 // DOM Elements
