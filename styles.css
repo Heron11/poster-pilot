@@ -570,6 +570,11 @@ body::before {
 .game-item.selected {
     border-color: #c9fd06;
     background: linear-gradient(135deg, rgba(201, 253, 6, 0.1), rgba(201, 253, 6, 0.05));
+    box-shadow: 0 0 0 2px rgba(201, 253, 6, 0.2);
+}
+
+.game-item.selected .game-matchup {
+    color: #c9fd06;
 }
 
 .game-matchup {

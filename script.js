@@ -447,6 +447,28 @@ function formatTime(timeString) {
     return `${hours}:${minutes} ${ampm}`;
 }
 
+// Add these missing helper functions after formatTime function
+function formatGameDate(d) {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return '';
+    return date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatGameTime(d) {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return '';
+    return date.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
+
 // Helper function to get detailed design style descriptions
 function getDesignStyleDescription(style) {
     const styleDescriptions = {
@@ -741,7 +763,11 @@ function displaySportsSchedules(results) {
                 </div>
                 <div class="game-list">
                     ${schedule.map(game => `
-                        <div class="game-item" data-game-id="${game.id}" data-team="${team.name}">
+                        <div class="game-item" 
+                             data-game-id="${game.id}" 
+                             data-team="${team.name}"
+                             data-matchup="${game.shortName || game.name}"
+                             data-venue="${game.venue || ''}">
                             <div class="game-matchup">${game.shortName || game.name}</div>
                             <div class="game-details">
                                 <span class="game-date">${formatGameDate(game.date)}</span>
@@ -765,25 +791,163 @@ function displaySportsSchedules(results) {
     });
 }
 
-// === Add below (e.g. near other helper functions) ===
-function formatGameDate(d) {
-    if (!d) return '';
-    const date = d instanceof Date ? d : new Date(d);
-    if (isNaN(date)) return '';
-    return date.toLocaleDateString(undefined, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
+function selectGame(gameElement) {
+    // Remove previous selections
+    document.querySelectorAll('.game-item').forEach(item => {
+        item.classList.remove('selected');
     });
+    
+    // Add selected class to clicked game
+    gameElement.classList.add('selected');
+    
+    // Get game data from element attributes and content
+    const gameId = gameElement.getAttribute('data-game-id');
+    const teamName = gameElement.getAttribute('data-team');
+    const gameMatchup = gameElement.querySelector('.game-matchup').textContent;
+    const gameDate = gameElement.querySelector('.game-date').textContent;
+    const gameTime = gameElement.querySelector('.game-time').textContent;
+    const gameVenue = gameElement.querySelector('.game-venue')?.textContent || '';
+    
+    // Store selected game globally
+    selectedGame = {
+        id: gameId,
+        team: teamName,
+        matchup: gameMatchup,
+        date: gameDate,
+        time: gameTime,
+        venue: gameVenue
+    };
+    
+    // Fill form fields with game information
+    fillFormWithGameInfo(selectedGame);
+    
+    console.log('Game selected:', selectedGame);
 }
 
-function formatGameTime(d) {
-    if (!d) return '';
-    const date = d instanceof Date ? d : new Date(d);
-    if (isNaN(date)) return '';
-    return date.toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit'
-    });
+function fillFormWithGameInfo(game) {
+    // Set business name to a default or leave empty for user to fill
+    if (businessName) businessName.value = '';
+    
+    // Set event name to the game matchup
+    if (eventName) eventName.value = game.matchup;
+    
+    // Parse and set the date
+    const parsedDate = parseGameDate(game.date);
+    if (parsedDate && eventDate) {
+        eventDate.value = parsedDate;
+    }
+    
+    // Parse and set the time
+    const parsedTime = parseGameTime(game.time);
+    if (parsedTime && eventTime) {
+        eventTime.value = parsedTime;
+    }
+    
+    // Set location to venue or team default
+    if (eventLocation) {
+        eventLocation.value = game.venue || getTeamVenue(game.team);
+    }
+    
+    // Set color scheme based on team
+    const teamColors = getTeamColors(game.team);
+    if (teamColors && colorScheme) {
+        colorScheme.value = teamColors;
+    }
+    
+    // Set additional details with team info
+    if (additionalDetails) {
+        additionalDetails.value = `${game.team} game - ${game.matchup}`;
+    }
+    
+    // Optionally set design style to sports theme
+    if (designStyle && designStyle.value === '') {
+        designStyle.value = 'bold';
+    }
+    
+    console.log('Form filled with game info:', game);
 }
-// === End added helpers ===
+
+// Helper function to parse game date (e.g., "Wed, Oct 2" to "2024-10-02")
+function parseGameDate(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        // Current year for context
+        const currentYear = new Date().getFullYear();
+        
+        // Parse date like "Wed, Oct 2" or "Thu, Oct 3"
+        const dateMatch = dateString.match(/\w+,?\s+(\w+)\s+(\d+)/);
+        if (!dateMatch) return '';
+        
+        const monthName = dateMatch[1];
+        const day = parseInt(dateMatch[2]);
+        
+        // Month name to number mapping
+        const months = {
+            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        
+        const month = months[monthName];
+        if (month === undefined) return '';
+        
+        const date = new Date(currentYear, month, day);
+        
+        // Format as YYYY-MM-DD for HTML date input
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
+    } catch (error) {
+        console.error('Error parsing game date:', error);
+        return '';
+    }
+}
+
+// Helper function to parse game time (e.g., "1:00 PM" to "13:00")
+function parseGameTime(timeString) {
+    if (!timeString) return '';
+    
+    try {
+        // Parse time like "1:00 PM" or "3:05 PM"
+        const timeMatch = timeString.match(/(\d+):(\d+)\s+(AM|PM)/i);
+        if (!timeMatch) return '';
+        
+        let hours = parseInt(timeMatch[1]);
+        const minutes = timeMatch[2];
+        const ampm = timeMatch[3].toLowerCase();
+        
+        // Convert to 24-hour format
+        if (ampm === 'pm' && hours !== 12) {
+            hours += 12;
+        } else if (ampm === 'am' && hours === 12) {
+            hours = 0;
+        }
+        
+        // Format as HH:MM for HTML time input
+        return String(hours).padStart(2, '0') + ':' + minutes;
+    } catch (error) {
+        console.error('Error parsing game time:', error);
+        return '';
+    }
+}
+
+// Helper function to get team venue defaults
+function getTeamVenue(teamName) {
+    const venues = {
+        'Philadelphia Eagles': 'Lincoln Financial Field',
+        'Philadelphia Phillies': 'Citizens Bank Park',
+        'Philadelphia 76ers': 'Wells Fargo Center',
+        'Philadelphia Union': 'Subaru Park'
+    };
+    
+    return venues[teamName] || 'Philadelphia, PA';
+}
+
+// Helper function to get team colors
+function getTeamColors(teamName) {
+    const teamData = Object.values(PHILLY_TEAMS).find(team => team.name === teamName);
+    if (teamData && teamData.colors) {
+        return teamData.colors.join(', ');
+    }
+    return '';
+}
