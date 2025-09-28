@@ -843,10 +843,10 @@ function fillFormWithGameInfo(game) {
         eventTime.value = parsedTime;
     }
     
-    // Set location to venue or team default
-    if (eventLocation) {
-        eventLocation.value = game.venue || getTeamVenue(game.team);
-    }
+    // // Set location to venue or team default
+    // if (eventLocation) {
+    //     eventLocation.value = game.venue || getTeamVenue(game.team);
+    // }
     
     // Set color scheme based on team
     const teamColors = getTeamColors(game.team);
