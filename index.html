@@ -15,35 +15,36 @@
         </header>
         
         <div class="content-wrapper">
+            <img src="txtvid.gif" alt="Text Animation" class="txt-gif">
+            
             <div class="parameters-panel">
-                
-                <div class="parameters-content">
-                    <div class="parameter-group">
+                <div class="parameters-content grid-9x9">
+                    <div class="parameter-group grid-item">
                         <label for="businessName">Business Name</label>
                         <input type="text" id="businessName" placeholder="Business name">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="eventName">Event Name</label>
                         <input type="text" id="eventName" placeholder="Event name">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="eventDate">Event Date</label>
                         <input type="date" id="eventDate">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="eventTime">Event Time</label>
                         <input type="time" id="eventTime">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="eventLocation">Event Location</label>
                         <input type="text" id="eventLocation" placeholder="Event location">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="designStyle">Design Style</label>
                         <select id="designStyle">
                             <option value="">Select a style</option>
@@ -54,29 +55,47 @@
                             <option value="elegant">Elegant</option>
                             <option value="playful">Playful</option>
                             <option value="professional">Professional</option>
+                            <option value="realistic">Realistic</option>
                         </select>
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
+                        <label for="textStyle">Text Style</label>
+                        <select id="textStyle">
+                            <option value="">Select text style</option>
+                            <option value="classic">Classic Typography</option>
+                            <option value="modern">Modern Sans-Serif</option>
+                            <option value="script">Elegant Script</option>
+                            <option value="bold">Bold Display</option>
+                            <option value="minimal">Minimal Clean</option>
+                            <option value="textMasking">Text Masking Effect</option>
+                            <option value="3d">3D Text Effect</option>
+                            <option value="neon">Neon Glow Text</option>
+                            <option value="handwritten">Handwritten Style</option>
+                            <option value="vintage">Vintage Typography</option>
+                        </select>
+                    </div>
+                    
+                    <div class="parameter-group grid-item">
                         <label for="colorScheme">Color Scheme</label>
                         <input type="text" id="colorScheme" placeholder="Color scheme">
                     </div>
                     
-                    <div class="parameter-group">
+                    <div class="parameter-group grid-item">
                         <label for="additionalDetails">Additional Details</label>
                         <input type="text" id="additionalDetails" placeholder="Details...">
                     </div>
                 </div>
             </div>
             
-            <button id="generateWithParams" class="generate-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                </svg>
-                Generate with Parameters
-            </button>
+                    <button id="generateWithParams" class="generate-btn">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                        Generate
+                    </button>
             
         </div>
     </div>
@@ -105,22 +124,9 @@
                         </svg>
                     </div>
                     <h3>Poster Generated Successfully!</h3>
-                    <p>Your image is ready for Zapier integration.</p>
+                    <p>Your image has been generated and downloaded.</p>
                 </div>
                 
-                <div class="image-url-container">
-                    <label for="overlayImageUrlInput">Image URL for Zapier:</label>
-                    <div class="url-input-group">
-                        <input type="text" id="overlayImageUrlInput" readonly class="url-input">
-                        <button id="overlayCopyUrlBtn" class="copy-btn">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            Copy URL
-                        </button>
-                    </div>
-                </div>
                 
                 <div class="overlay-actions">
                     <button id="overlayDownloadBtn" class="action-btn">
