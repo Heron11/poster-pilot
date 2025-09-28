@@ -2,6 +2,42 @@
 const OPENAI_API_KEY = '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';
 const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 
+// Sports Teams Configuration
+const PHILLY_TEAMS = {
+    eagles: { 
+        id: '21', // Correct ESPN team ID for Philadelphia Eagles
+        league: 'nfl', 
+        name: 'Philadelphia Eagles',
+        logo: '🦅',
+        colors: ['#004C54', '#A5ACAF', '#ACC0C6']
+    },
+    phillies: { 
+        id: '22', // Correct ESPN team ID for Philadelphia Phillies
+        league: 'mlb', 
+        name: 'Philadelphia Phillies',
+        logo: '⚾',
+        colors: ['#E81828', '#002D72', '#FFFFFF']
+    },
+    sixers: { 
+        id: '20', // Correct ESPN team ID for Philadelphia 76ers
+        league: 'nba', 
+        name: 'Philadelphia 76ers',
+        logo: '🏀',
+        colors: ['#006BB6', '#ED174C', '#002B5C']
+    },
+    union: { 
+        id: '28567', // Correct ESPN team ID for Philadelphia Union
+        league: 'mls', 
+        name: 'Philadelphia Union',
+        logo: '⚽',
+        colors: ['#B1872D', '#071B2C']
+    }
+};
+
+// Global sports schedule data
+let sportsSchedule = {};
+let selectedGame = null;
+
 // DOM Elements
 const promptInput = document.getElementById('promptInput');
 const generateBtn = document.getElementById('generateBtn');
@@ -12,6 +48,8 @@ const imageContainer = document.getElementById('imageContainer');
 const generatedImage = document.getElementById('generatedImage');
 const downloadBtn = document.getElementById('downloadBtn');
 const regenerateBtn = document.getElementById('regenerateBtn');
+const sportsScheduleContainer = document.getElementById('sportsScheduleContainer');
+const refreshScheduleBtn = document.getElementById('refreshSchedule');
 
 // Parameter elements
 const businessName = document.getElementById('businessName');
@@ -55,11 +93,17 @@ function setupEventListeners() {
     // Generate with parameters button
     generateWithParams.addEventListener('click', handleGenerateWithParams);
 
+    // Sports schedule refresh
+    refreshScheduleBtn.addEventListener('click', loadSportsSchedules);
+    
     // Auto-resize textarea
     promptInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = this.scrollHeight + 'px';
     });
+    
+    // Load sports schedules on page load
+    loadSportsSchedules();
 }
 
 // Handle image generation
@@ -400,13 +444,288 @@ function hideImage() {
     imageContainer.classList.add('hidden');
 }
 
-// Utility function to format error messages
-function formatErrorMessage(error) {
-    if (error.includes('API request failed')) {
-        return 'There was an issue with the image generation service. Please try again.';
-    } else if (error.includes('Unexpected API response')) {
-        return 'The service returned an unexpected response. Please try again.';
-    } else {
-        return error;
+// Load sports schedules from ESPN API - REAL DATA ONLY
+async function loadSportsSchedules() {
+    sportsScheduleContainer.innerHTML = '<div class="loading-sports">Loading schedules...</div>';
+    
+    try {
+        const schedulePromises = Object.entries(PHILLY_TEAMS).map(async ([key, team]) => {
+            try {
+                const schedule = await fetchTeamSchedule(team);
+                return { key, team, schedule };
+            } catch (error) {
+                console.error(`Error fetching ${team.name} schedule:`, error);
+                return { key, team, schedule: [] };
+            }
+        });
+        
+        const results = await Promise.all(schedulePromises);
+        
+        // Store the schedule data
+        sportsSchedule = {};
+        results.forEach(({ key, schedule }) => {
+            sportsSchedule[key] = schedule;
+        });
+        
+        displaySportsSchedules(results);
+        
+        console.log('Loaded real schedules for all teams');
+    } catch (error) {
+        console.error('Error loading sports schedules:', error);
+        sportsScheduleContainer.innerHTML = '<div class="no-games">Unable to load schedules. Please try again.</div>';
     }
+}
+
+// Add the missing helper functions first
+function formatGameDate(date) {
+    return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+function formatGameTime(date) {
+    return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+    });
+}
+
+function parseGameDate(dateString) {
+    try {
+        // Parse "Mon, Oct 14" format and convert to YYYY-MM-DD
+        const currentYear = new Date().getFullYear();
+        const date = new Date(`${dateString}, ${currentYear}`);
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        console.error('Error parsing date:', error);
+        return null;
+    }
+}
+
+function parseGameTime(timeString) {
+    try {
+        const [time, period] = timeString.split(' ');
+        const [hours, minutes] = time.split(':');
+        let hour24 = parseInt(hours);
+        
+        if (period === 'PM' && hour24 !== 12) {
+            hour24 += 12;
+        } else if (period === 'AM' && hour24 === 12) {
+            hour24 = 0;
+        }
+        
+        return `${hour24.toString().padStart(2, '0')}:${minutes || '00'}`;
+    } catch (error) {
+        console.error('Error parsing time:', error);
+        return null;
+    }
+}
+
+function getTeamColors(teamName) {
+    const team = Object.values(PHILLY_TEAMS).find(t => t.name === teamName);
+    if (team && team.colors && team.colors.length > 0) {
+        return {
+            primary: team.colors[0],
+            secondary: team.colors[1] || team.colors[0],
+            all: team.colors.join(', ')
+        };
+    }
+    return null;
+}
+
+// Select a game and populate form fields
+function selectGame(gameElement) {
+    // Remove previous selection
+    document.querySelectorAll('.game-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    
+    // Add selection to clicked item
+    gameElement.classList.add('selected');
+    
+    // Get game data
+    const gameId = gameElement.dataset.gameId;
+    const teamName = gameElement.dataset.team;
+    const matchupText = gameElement.querySelector('.game-matchup').textContent;
+    const dateText = gameElement.querySelector('.game-date').textContent;
+    const timeText = gameElement.querySelector('.game-time').textContent;
+    
+    // Store selected game
+    selectedGame = {
+        id: gameId,
+        team: teamName,
+        matchup: matchupText,
+        date: dateText,
+        time: timeText
+    };
+    
+    // Auto-fill form fields
+    autoFillGameDetails(selectedGame);
+}
+
+// Auto-fill form fields with selected game details
+function autoFillGameDetails(game) {
+    // Parse the date from the display format
+    const gameDate = parseGameDate(game.date);
+    const gameTime = parseGameTime(game.time);
+    
+    // Fill the form fields
+    if (eventName && !eventName.value) {
+        eventName.value = `${game.matchup} Watch Party`;
+    }
+    
+    if (gameDate && eventDate && !eventDate.value) {
+        eventDate.value = gameDate;
+    }
+    
+    if (gameTime && eventTime && !eventTime.value) {
+        eventTime.value = gameTime;
+    }
+    
+    // Add game-specific details to additional details if empty
+    if (additionalDetails && !additionalDetails.value) {
+        additionalDetails.value = `Join us for the ${game.matchup}! Great atmosphere, food, and drinks while cheering on our team.`;
+    }
+    
+    // Set appropriate color scheme based on team
+    if (colorScheme && !colorScheme.value) {
+        const teamColors = getTeamColors(game.team);
+        if (teamColors) {
+            colorScheme.value = teamColors.all;
+        }
+    }
+}
+
+// FIXED: Fetch team schedule from ESPN API with correct endpoints
+async function fetchTeamSchedule(team) {
+    const today = new Date();
+    const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    // Use correct ESPN API endpoints - different structure for each league
+    let url;
+    switch(team.league) {
+        case 'nfl':
+            url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${team.id}/schedule`;
+            break;
+        case 'nba':
+            url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${team.id}/schedule`;
+            break;
+        case 'mlb':
+            url = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/${team.id}/schedule`;
+            break;
+        case 'mls':
+            url = `https://site.api.espn.com/apis/site/v2/sports/soccer/mls/teams/${team.id}/schedule`;
+            break;
+        default:
+            throw new Error(`Unsupported league: ${team.league}`);
+    }
+    
+    try {
+        console.log(`Fetching schedule for ${team.name} from: ${url}`);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+        
+        if (!response.ok) {
+            console.error(`HTTP error for ${team.name}! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`Received data for ${team.name}:`, data);
+        
+        // Handle different API response structures
+        const events = data.events || [];
+        
+        // Filter for upcoming games within the next week
+        const upcomingGames = events
+            .filter(event => {
+                const gameDate = new Date(event.date);
+                return gameDate >= today && gameDate <= oneWeekFromNow;
+            })
+            .map(event => {
+                // Get opponent info
+                const competition = event.competitions?.[0];
+                const competitors = competition?.competitors || [];
+                const homeTeam = competitors.find(c => c.homeAway === 'home');
+                const awayTeam = competitors.find(c => c.homeAway === 'away');
+                
+                return {
+                    id: event.id,
+                    name: event.name,
+                    shortName: event.shortName || `${awayTeam?.team?.abbreviation || 'TBA'} @ ${homeTeam?.team?.abbreviation || 'TBA'}`,
+                    date: new Date(event.date),
+                    status: event.status?.type?.description || 'Scheduled',
+                    venue: competition?.venue?.fullName || 'TBD',
+                    homeTeam: homeTeam?.team?.displayName || 'TBA',
+                    awayTeam: awayTeam?.team?.displayName || 'TBA'
+                };
+            })
+            .sort((a, b) => a.date - b.date);
+        
+        console.log(`Found ${upcomingGames.length} upcoming games for ${team.name}`);
+        return upcomingGames;
+        
+    } catch (error) {
+        console.error(`Error fetching schedule for ${team.name}:`, error);
+        throw error;
+    }
+}
+
+// Display sports schedules in the UI - REAL DATA ONLY
+function displaySportsSchedules(results) {
+    const hasAnyGames = results.some(({ schedule }) => schedule && schedule.length > 0);
+    
+    if (!hasAnyGames) {
+        sportsScheduleContainer.innerHTML = `
+            <div class="no-games">
+                <p>No Philadelphia team games scheduled for the next week</p>
+                <p style="font-size: 0.8rem; margin-top: 8px; color: #95a5a6;">
+                    Check back later for upcoming games
+                </p>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = results
+        .filter(({ schedule }) => schedule && schedule.length > 0)
+        .map(({ team, schedule }) => `
+            <div class="team-section">
+                <div class="team-header">
+                    <span class="team-logo">${team.logo}</span>
+                    <span class="team-name">${team.name}</span>
+                </div>
+                <div class="game-list">
+                    ${schedule.map(game => `
+                        <div class="game-item" data-game-id="${game.id}" data-team="${team.name}">
+                            <div class="game-matchup">${game.shortName || game.name}</div>
+                            <div class="game-details">
+                                <span class="game-date">${formatGameDate(game.date)}</span>
+                                <span class="game-time">${formatGameTime(game.date)}</span>
+                            </div>
+                            ${game.venue && game.venue !== 'TBD' ? 
+                                `<div class="game-venue" style="font-size: 0.75rem; color: #95a5a6; margin-top: 2px;">${game.venue}</div>` 
+                                : ''
+                            }
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    
+    sportsScheduleContainer.innerHTML = html;
+    
+    // Add click handlers for game selection
+    document.querySelectorAll('.game-item').forEach(item => {
+        item.addEventListener('click', () => selectGame(item));
+    });
 }
