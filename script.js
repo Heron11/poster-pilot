@@ -5,29 +5,30 @@ const API_ENDPOINT = 'https://api.openai.com/v1/images/generations';
 // Sports Teams Configuration
 const PHILLY_TEAMS = {
     eagles: { 
-        id: '21', // Correct ESPN team ID for Philadelphia Eagles
-        league: 'nfl', 
+        id: '21',
+        league: 'nfl',
         name: 'Philadelphia Eagles',
         logo: '🦅',
         colors: ['#004C54', '#A5ACAF', '#ACC0C6']
     },
     phillies: { 
-        id: '22', // Correct ESPN team ID for Philadelphia Phillies
-        league: 'mlb', 
+        id: '22',
+        league: 'mlb',
         name: 'Philadelphia Phillies',
         logo: '⚾',
         colors: ['#E81828', '#002D72', '#FFFFFF']
     },
     sixers: { 
-        id: '20', // Correct ESPN team ID for Philadelphia 76ers
-        league: 'nba', 
+        id: '20',
+        league: 'nba',
         name: 'Philadelphia 76ers',
         logo: '🏀',
         colors: ['#006BB6', '#ED174C', '#002B5C']
     },
+    // FIX: use usa.1 (MLS competition code) not mls
     union: { 
-        id: '28567', // Correct ESPN team ID for Philadelphia Union
-        league: 'mls', 
+        id: '10739',
+        league: 'usa.1',
         name: 'Philadelphia Union',
         logo: '⚽',
         colors: ['#B1872D', '#071B2C']
@@ -115,14 +116,28 @@ function setupEventListeners() {
     refreshScheduleBtn.addEventListener('click', loadSportsSchedules);
     
     // Auto-resize textarea
-    promptInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = this.scrollHeight + 'px';
-    });
+    if (promptInput) {
+        promptInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    }
     
-    // FIXED: Load sports schedules on page load regardless of button existence
+    // Close overlay when clicking outside
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                hideOverlay();
+            }
+        });
+    }
+    
+    // Load sports schedules on page load automatically - only if container exists
     if (sportsScheduleContainer) {
+        console.log('Loading sports schedules on page load...');
         loadSportsSchedules();
+    } else {
+        console.log('Sports schedule container not found');
     }
 }
 
@@ -631,208 +646,73 @@ async function loadSportsSchedules() {
     }
 }
 
-// Add the missing helper functions first
-function formatGameDate(date) {
-    return date.toLocaleDateString('en-US', { 
-        weekday: 'short', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-
-function formatGameTime(date) {
-    return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit',
-        hour12: true 
-    });
-}
-
-function parseGameDate(dateString) {
-    try {
-        // Parse "Mon, Oct 14" format and convert to YYYY-MM-DD
-        const currentYear = new Date().getFullYear();
-        const date = new Date(`${dateString}, ${currentYear}`);
-        return date.toISOString().split('T')[0];
-    } catch (error) {
-        console.error('Error parsing date:', error);
-        return null;
-    }
-}
-
-function parseGameTime(timeString) {
-    try {
-        const [time, period] = timeString.split(' ');
-        const [hours, minutes] = time.split(':');
-        let hour24 = parseInt(hours);
-        
-        if (period === 'PM' && hour24 !== 12) {
-            hour24 += 12;
-        } else if (period === 'AM' && hour24 === 12) {
-            hour24 = 0;
-        }
-        
-        return `${hour24.toString().padStart(2, '0')}:${minutes || '00'}`;
-    } catch (error) {
-        console.error('Error parsing time:', error);
-        return null;
-    }
-}
-
-function getTeamColors(teamName) {
-    const team = Object.values(PHILLY_TEAMS).find(t => t.name === teamName);
-    if (team && team.colors && team.colors.length > 0) {
-        return {
-            primary: team.colors[0],
-            secondary: team.colors[1] || team.colors[0],
-            all: team.colors.join(', ')
-        };
-    }
-    return null;
-}
-
-// Select a game and populate form fields
-function selectGame(gameElement) {
-    // Remove previous selection
-    document.querySelectorAll('.game-item').forEach(item => {
-        item.classList.remove('selected');
-    });
-    
-    // Add selection to clicked item
-    gameElement.classList.add('selected');
-    
-    // Get game data
-    const gameId = gameElement.dataset.gameId;
-    const teamName = gameElement.dataset.team;
-    const matchupText = gameElement.querySelector('.game-matchup').textContent;
-    const dateText = gameElement.querySelector('.game-date').textContent;
-    const timeText = gameElement.querySelector('.game-time').textContent;
-    
-    // Store selected game
-    selectedGame = {
-        id: gameId,
-        team: teamName,
-        matchup: matchupText,
-        date: dateText,
-        time: timeText
-    };
-    
-    // Auto-fill form fields
-    autoFillGameDetails(selectedGame);
-}
-
-// Auto-fill form fields with selected game details
-function autoFillGameDetails(game) {
-    // Parse the date from the display format
-    const gameDate = parseGameDate(game.date);
-    const gameTime = parseGameTime(game.time);
-    
-    // Fill the form fields
-    if (eventName && !eventName.value) {
-        eventName.value = `${game.matchup} Watch Party`;
-    }
-    
-    if (gameDate && eventDate && !eventDate.value) {
-        eventDate.value = gameDate;
-    }
-    
-    if (gameTime && eventTime && !eventTime.value) {
-        eventTime.value = gameTime;
-    }
-    
-    // Add game-specific details to additional details if empty
-    if (additionalDetails && !additionalDetails.value) {
-        additionalDetails.value = `Join us for the ${game.matchup}! Great atmosphere, food, and drinks while cheering on our team.`;
-    }
-    
-    // Set appropriate color scheme based on team
-    if (colorScheme && !colorScheme.value) {
-        const teamColors = getTeamColors(game.team);
-        if (teamColors) {
-            colorScheme.value = teamColors.all;
-        }
-    }
-}
-
-// FIXED: Fetch team schedule from ESPN API with correct endpoints
+// Replace your fetchTeamSchedule function with this version
 async function fetchTeamSchedule(team) {
     const today = new Date();
     const oneWeekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    
-    // Use correct ESPN API endpoints - different structure for each league
-    let url;
-    switch(team.league) {
-        case 'nfl':
-            url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/${team.id}/schedule`;
-            break;
-        case 'nba':
-            url = `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/${team.id}/schedule`;
-            break;
-        case 'mlb':
-            url = `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams/${team.id}/schedule`;
-            break;
-        case 'mls':
-            url = `https://site.api.espn.com/apis/site/v2/sports/soccer/mls/teams/${team.id}/schedule`;
-            break;
-        default:
-            throw new Error(`Unsupported league: ${team.league}`);
-    }
-    
+
+    // Map league -> ESPN path segment
+    const leaguePaths = {
+        nfl: 'football/nfl',
+        nba: 'basketball/nba',
+        mlb: 'baseball/mlb',
+        'usa.1': 'soccer/usa.1' // MLS
+    };
+
+    const path = leaguePaths[team.league];
+    if (!path) throw new Error(`Unsupported league: ${team.league}`);
+
+    let url = `https://site.api.espn.com/apis/site/v2/sports/${path}/teams/${team.id}/schedule`;
+    console.log(`Fetching schedule for ${team.name} from: ${url}`);
+
+    let data;
     try {
-        console.log(`Fetching schedule for ${team.name} from: ${url}`);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        let resp = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!resp.ok) {
+            // Fallback: if MLS 500, try legacy soccer/mls path once
+            if (team.league === 'usa.1' && resp.status === 500) {
+                const fallback = `https://site.api.espn.com/apis/site/v2/sports/soccer/mls/teams/${team.id}/schedule`;
+                console.warn(`Primary MLS path 500. Trying fallback: ${fallback}`);
+                const fr = await fetch(fallback, { headers: { Accept: 'application/json' } });
+                if (!fr.ok) throw new Error(`Fallback HTTP ${fr.status}`);
+                data = await fr.json();
+            } else {
+                throw new Error(`HTTP ${resp.status}`);
             }
-        });
-        
-        if (!response.ok) {
-            console.error(`HTTP error for ${team.name}! status: ${response.status}`);
-            throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+            data = await resp.json();
         }
-        
-        const data = await response.json();
-        console.log(`Received data for ${team.name}:`, data);
-        
-        // Handle different API response structures
-        const events = data.events || [];
-        
-        // Filter for upcoming games within the next week
-        const upcomingGames = events
-            .filter(event => {
-                const gameDate = new Date(event.date);
-                return gameDate >= today && gameDate <= oneWeekFromNow;
-            })
-            .map(event => {
-                // Get opponent info
-                const competition = event.competitions?.[0];
-                const competitors = competition?.competitors || [];
-                const homeTeam = competitors.find(c => c.homeAway === 'home');
-                const awayTeam = competitors.find(c => c.homeAway === 'away');
-                
-                return {
-                    id: event.id,
-                    name: event.name,
-                    shortName: event.shortName || `${awayTeam?.team?.abbreviation || 'TBA'} @ ${homeTeam?.team?.abbreviation || 'TBA'}`,
-                    date: new Date(event.date),
-                    status: event.status?.type?.description || 'Scheduled',
-                    venue: competition?.venue?.fullName || 'TBD',
-                    homeTeam: homeTeam?.team?.displayName || 'TBA',
-                    awayTeam: awayTeam?.team?.displayName || 'TBA'
-                };
-            })
-            .sort((a, b) => a.date - b.date);
-        
-        console.log(`Found ${upcomingGames.length} upcoming games for ${team.name}`);
-        return upcomingGames;
-        
-    } catch (error) {
-        console.error(`Error fetching schedule for ${team.name}:`, error);
-        throw error;
+    } catch (e) {
+        console.error(`Error fetching schedule for ${team.name}:`, e);
+        return []; // return empty so UI can show "No upcoming games"
     }
+
+    const events = data.events || [];
+    const upcoming = events
+        .filter(ev => {
+            const d = new Date(ev.date);
+            return d >= today && d <= oneWeekFromNow;
+        })
+        .map(ev => {
+            const comp = ev.competitions?.[0];
+            const competitors = comp?.competitors || [];
+            const home = competitors.find(c => c.homeAway === 'home');
+            const away = competitors.find(c => c.homeAway === 'away');
+            return {
+                id: ev.id,
+                name: ev.name,
+                shortName: ev.shortName || `${away?.team?.abbreviation || '?'} @ ${home?.team?.abbreviation || '?'}`,
+                date: new Date(ev.date),
+                status: ev.status?.type?.description || 'Scheduled',
+                venue: comp?.venue?.fullName || 'TBD',
+                homeTeam: home?.team?.displayName || 'TBA',
+                awayTeam: away?.team?.displayName || 'TBA'
+            };
+        })
+        .sort((a,b) => a.date - b.date);
+
+    console.log(`Found ${upcoming.length} upcoming games for ${team.name}`);
+    return upcoming;
 }
 
 // Display sports schedules in the UI - REAL DATA ONLY
@@ -884,3 +764,26 @@ function displaySportsSchedules(results) {
         item.addEventListener('click', () => selectGame(item));
     });
 }
+
+// === Add below (e.g. near other helper functions) ===
+function formatGameDate(d) {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return '';
+    return date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function formatGameTime(d) {
+    if (!d) return '';
+    const date = d instanceof Date ? d : new Date(d);
+    if (isNaN(date)) return '';
+    return date.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
+// === End added helpers ===
