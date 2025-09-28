@@ -471,10 +471,11 @@ body::before {
     margin: 0 auto 0 auto;
     border-radius: 16px;
 }
+
 /* Sports Schedule Section */
 .sports-schedule-section {
     margin-bottom: 25px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid #404040;
     padding-bottom: 20px;
 }
 
@@ -488,7 +489,7 @@ body::before {
 .sports-header h4 {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: #ffffff;
     margin: 0;
 }
 
@@ -498,12 +499,12 @@ body::before {
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
-    color: #667eea;
+    color: #c9fd06;
     transition: background-color 0.2s;
 }
 
 .refresh-btn:hover {
-    background-color: #f8f9fa;
+    background-color: rgba(201, 253, 6, 0.1);
 }
 
 .sports-container {
@@ -514,7 +515,7 @@ body::before {
 .loading-sports {
     text-align: center;
     padding: 20px;
-    color: #7f8c8d;
+    color: #cccccc;
     font-size: 0.9rem;
 }
 
@@ -528,7 +529,7 @@ body::before {
     gap: 8px;
     margin-bottom: 8px;
     padding: 6px;
-    background: #f8f9fa;
+    background: #404040;
     border-radius: 6px;
 }
 
@@ -541,7 +542,7 @@ body::before {
 .team-name {
     font-weight: 600;
     font-size: 0.9rem;
-    color: #2c3e50;
+    color: #ffffff;
 }
 
 .game-list {
@@ -551,8 +552,8 @@ body::before {
 }
 
 .game-item {
-    background: white;
-    border: 1px solid #e1e5e9;
+    background: #2d2d2d;
+    border: 1px solid #404040;
     border-radius: 6px;
     padding: 10px;
     cursor: pointer;
@@ -561,24 +562,24 @@ body::before {
 }
 
 .game-item:hover {
-    border-color: #667eea;
+    border-color: #c9fd06;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 2px 8px rgba(201, 253, 6, 0.15);
 }
 
 .game-item.selected {
-    border-color: #667eea;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-color: #c9fd06;
+    background: linear-gradient(135deg, rgba(201, 253, 6, 0.1), rgba(201, 253, 6, 0.05));
 }
 
 .game-matchup {
     font-weight: 600;
-    color: #2c3e50;
+    color: #ffffff;
     margin-bottom: 4px;
 }
 
 .game-details {
-    color: #7f8c8d;
+    color: #cccccc;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -591,6 +592,12 @@ body::before {
 .game-time {
     font-size: 0.8rem;
     font-weight: 500;
+}
+
+.game-venue {
+    font-size: 0.75rem;
+    color: #95a5a6;
+    margin-top: 2px;
 }
 
 .no-games {
